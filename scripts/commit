@@ -1,0 +1,10 @@
+#!/bin/bash
+set -eu
+
+main() {
+  git add .
+  git commit -m "$(date)"
+  git push
+}
+
+main "$@"
