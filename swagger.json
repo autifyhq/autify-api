@@ -144,7 +144,7 @@
         }
       }
     },
-    "/projects/{project_id}/resutls": {
+    "/projects/{project_id}/results": {
       "get": {
         "tags": [
           "result"
