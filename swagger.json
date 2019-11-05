@@ -3,7 +3,7 @@
   "info": {
     "title": "Autify API",
     "version": "v1",
-    "description": "## 認証\nパーソナルアクセストークンを使用して、Bearerヘッダーに渡すことでAPIを認証できます。 APIキーを生成または管理するには、[アカウントページ](https://app.autify.com/settings/tokens)にアクセスしてください。\n\n個人用アクセストークンをヘッダーに使用する例：\n```\ncurl -H \"Authorization: Bearer YOUR_PERSONAL_ACCESS_TOKEN\" https://app.autify.com/api/v1/\n```\n\n認証情報が無効または省略された場合、エラーメッセージがステータスコード401とともに返されます：\n```\n{\n  \"errors\":[{\n    \"message\": \"Bad credentials\"\n  }]\n}\n```\n"
+    "description": "## Authorization\nYou can authenticate the API by using a personal access token and passing it to the Bearer header. To generate or manage API keys、please visit [your account page](https://app.autify.com/settings/tokens).\n\nExample of using a personal access token in the header：\n```\ncurl -H \"Authorization: Bearer YOUR_PERSONAL_ACCESS_TOKEN\" https://app.autify.com/api/v1/\n```\n\nIf the credentials are invalid or omitted, an error message is returned with status code 401：\n```\n{\n  \"errors\":[{\n    \"message\": \"Bad credentials\"\n  }]\n}\n```\n"
   },
   "servers": [
     {
