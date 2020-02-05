@@ -249,6 +249,7 @@
                     "status": {
                       "type": "string",
                       "enum": [
+                        "queuing",
                         "waiting",
                         "running",
                         "passed",
