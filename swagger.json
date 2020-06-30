@@ -14,6 +14,7 @@
   "paths": {
     "/schedules/{id}": {
       "post": {
+        "description": "Note: the Schedule is the TestPlan.",
         "tags": [
           "schedule"
         ],
