@@ -38,7 +38,7 @@ paths:
           required: true
           description: |
             For example, the `{id}` for the following URL is **3**.
-            `https://app.autify.com/projects/1/test_plans/3`
+            `https://app.autify.com/schedules/3`
           schema:
             type: integer
       responses:
@@ -97,7 +97,7 @@ paths:
           required: true
           description: |
             For example, the `{project_id}` for the following URL is **1**.<br/>
-            `https://app.autify.com/projects/1/scenarios`
+            `https://app.autify.com/projects/1/scenarios/2`
           schema:
             type: integer
         - name: id
@@ -130,7 +130,7 @@ paths:
           required: true
           description: |
             For example, the `{project_id}` for the following URL is **1**.<br/>
-            `https://app.autify.com/projects/1/scenarios`
+            `https://app.autify.com/projects/1/results`
           schema:
             type: integer
         - name: page
@@ -173,7 +173,7 @@ paths:
           required: true
           description: |
             For example, the `{project_id}` for the following URL is **1**.<br/>
-            `https://app.autify.com/projects/1/scenarios`
+            `https://app.autify.com/projects/1/results/4`
           schema:
             type: integer
         - name: id
