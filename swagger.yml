@@ -20,10 +20,10 @@ info:
     }
     ```
 servers:
-  - url: 'https://app.autify.com/api/v1/'
+  - url: "https://app.autify.com/api/v1/"
     description: Production server
 paths:
-  '/schedules/{id}':
+  "/schedules/{id}":
     post:
       description: |
         _Note: the Schedule is the TestPlan now._<br/><br/>
@@ -42,15 +42,15 @@ paths:
           schema:
             type: integer
       responses:
-        '200':
+        "200":
           description: ok
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/TestPlanResult'
-  '/projects/{project_id}/scenarios':
+                  $ref: "#/components/schemas/TestPlanResult"
+  "/projects/{project_id}/scenarios":
     get:
       description: |
         # List scenarios
@@ -75,15 +75,15 @@ paths:
             minimum: 1
           description: The number of page returns.
       responses:
-        '200':
+        "200":
           description: ok
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Story'
-  '/projects/{project_id}/scenarios/{id}':
+                  $ref: "#/components/schemas/Story"
+  "/projects/{project_id}/scenarios/{id}":
     get:
       description: |
         # Get a scenario
@@ -109,13 +109,13 @@ paths:
           schema:
             type: integer
       responses:
-        '200':
+        "200":
           description: ok
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Story'
-  '/projects/{project_id}/results':
+                $ref: "#/components/schemas/Story"
+  "/projects/{project_id}/results":
     get:
       description: |
         # List results
@@ -150,15 +150,15 @@ paths:
             default: 30
           description: The number of items returns. Default number is 30 and up to a maximum of 100
       responses:
-        '200':
+        "200":
           description: ok
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/TestPlanResult'
-  '/projects/{project_id}/results/{id}':
+                  $ref: "#/components/schemas/TestPlanResult"
+  "/projects/{project_id}/results/{id}":
     get:
       description: |
         # Get a result
@@ -185,7 +185,7 @@ paths:
           schema:
             type: integer
       responses:
-        '200':
+        "200":
           description: ok
           content:
             application/json:
@@ -222,11 +222,11 @@ paths:
                         id:
                           type: integer
                         capability:
-                          $ref: '#/components/schemas/Capability'
+                          $ref: "#/components/schemas/Capability"
                         test_case_results:
                           type: array
                           items:
-                            $ref: '#/components/schemas/TestCaseResult'
+                            $ref: "#/components/schemas/TestCaseResult"
 components:
   securitySchemes:
     bearerAuth:
