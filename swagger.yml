@@ -149,6 +149,12 @@ paths:
             maximum: 100
             default: 30
           description: The number of items returns. Default number is 30 and up to a maximum of 100
+        - name: test_plan_id
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Test plan ID used to filter results.
       responses:
         "200":
           description: ok
@@ -208,12 +214,16 @@ paths:
                     type: integer
                   started_at:
                     type: string
+                    format: date-time
                   finished_at:
                     type: string
+                    format: date-time
                   created_at:
                     type: string
+                    format: date-time
                   updated_at:
                     type: string
+                    format: date-time
                   test_plan_capability_results:
                     type: array
                     items:
@@ -242,8 +252,10 @@ components:
           type: string
         created_at:
           type: string
+          format: date-time
         updated_at:
           type: string
+          format: date-time
     Capability:
       properties:
         id:
@@ -262,8 +274,10 @@ components:
           type: string
         created_at:
           type: string
+          format: date-time
         updated_at:
           type: string
+          format: date-time
     TestPlan:
       properties:
         id:
@@ -287,12 +301,29 @@ components:
           type: integer
         started_at:
           type: string
+          format: date-time
         finished_at:
           type: string
+          format: date-time
         created_at:
           type: string
+          format: date-time
         updated_at:
           type: string
+          format: date-time
+        test_plan:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            created_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
     TestPlanCapabilityResult:
       properties:
         id:
@@ -310,12 +341,16 @@ components:
           type: integer
         started_at:
           type: string
+          format: date-time
         finished_at:
           type: string
+          format: date-time
         created_at:
           type: string
+          format: date-time
         updated_at:
           type: string
+          format: date-time
     TestCaseResult:
       properties:
         id:
@@ -333,9 +368,13 @@ components:
           type: integer
         started_at:
           type: string
+          format: date-time
         finished_at:
           type: string
+          format: date-time
         created_at:
           type: string
+          format: date-time
         updated_at:
           type: string
+          format: date-time
