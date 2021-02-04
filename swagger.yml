@@ -237,6 +237,19 @@ paths:
                           type: array
                           items:
                             $ref: "#/components/schemas/TestCaseResult"
+                  test_plan:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                      created_at:
+                        type: string
+                        format: date-time
+                      updated_at:
+                        type: string
+                        format: date-time
 components:
   securitySchemes:
     bearerAuth:
