@@ -30,7 +30,7 @@ servers:
   - url: "https://app.autify.com/api/v1/"
     description: Production server
 paths:
-  "/schedules/{id}":
+  "/schedules/{schedule_id}":
     post:
       description: |
         _Note: the Schedule is the TestPlan now._<br/><br/>
@@ -41,11 +41,11 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: id
+        - name: schedule_id
           in: path
           required: true
           description: |
-            For example, the `{id}` for the following URL is **3**.
+            For example, the `{schedule_id}` for the following URL is **3**.
             `https://app.autify.com/projects/1/test_plans/3`
           schema:
             type: integer
@@ -91,7 +91,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Story"
-  "/projects/{project_id}/scenarios/{id}":
+  "/projects/{project_id}/scenarios/{scenario_id}":
     get:
       description: |
         # Get a scenario
@@ -108,11 +108,11 @@ paths:
             `https://app.autify.com/projects/1/scenarios/2`
           schema:
             type: integer
-        - name: id
+        - name: scenario_id
           in: path
           required: true
           description: |
-            For example, the `{id}` for the following URL is **2**.<br/>
+            For example, the `{scenario_id}` for the following URL is **2**.<br/>
             `https://app.autify.com/projects/1/scenarios/2`
           schema:
             type: integer
@@ -172,11 +172,11 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/TestPlanResult"
-  "/projects/{project_id}/results/{id}":
+  "/projects/{project_id}/results/{result_id}":
     get:
       description: |
         # Get a result
-        The same content as shown on https://app.autify.com/projects/{project_id}/results/{id} will be returned.
+        The same content as shown on https://app.autify.com/projects/{project_id}/results/{result_id} will be returned.
       tags:
         - result
       security:
@@ -190,11 +190,11 @@ paths:
             `https://app.autify.com/projects/1/results/4`
           schema:
             type: integer
-        - name: id
+        - name: result_id
           in: path
           required: true
           description: |
-            For example, the `{id}` for the following URL is **4**.<br/>
+            For example, the `{result_id}` for the following URL is **4**.<br/>
             `https://app.autify.com/projects/1/results/4`
           schema:
             type: integer
