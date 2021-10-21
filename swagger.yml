@@ -258,6 +258,103 @@ paths:
                       updated_at:
                         type: string
                         format: date-time
+  "/test_plans/{test_plan_id}/url_replacements":
+    post:
+      description: |
+        # Create new url replacement for test plan
+      tags:
+        - url_replacement
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: test_plan_id
+          in: path
+          required: true
+          description: |
+            For example, the `{test_plan_id}` for the following URL is **15**.<br/>
+            `https://app.autify.com/projects/1/test_plans/15`
+          schema:
+            type: integer
+        - name: url_replacement
+          in: query
+          required: true
+          style: deepObject
+          schema:
+            type: object
+            properties:
+              pattern_url:
+                type: string
+                example: "https://mywebsite.com"
+              replacement_url:
+                type: string
+                example: "https://replacement.com"
+          description: The url to replace
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: "#/components/schemas/UrlReplacement"
+    get:
+      description: |
+        # List url replacement for test plan
+      tags:
+        - url_replacement
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: test_plan_id
+          in: path
+          required: true
+          description: |
+            For example, the `{test_plan_id}` for the following URL is **15**.<br/>
+            `https://app.autify.com/projects/1/test_plans/15`
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UrlReplacement"
+  "/test_plans/{test_plan_id}/url_replacements/{url_replacement_id}":
+    delete:
+      description: |
+        # Delete url replacement for test plan
+      tags:
+        - url_replacement
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: test_plan_id
+          in: path
+          required: true
+          description: |
+            For example, the `{test_plan_id}` for the following URL is **15**.<br/>
+            `https://app.autify.com/projects/1/test_plans/15`
+          schema:
+            type: integer
+        - name: url_replacement_id
+          in: path
+          required: true
+          description: |
+            url_replacement id
+          schema:
+            type: integer
+
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: string
+                example: "ok"
 components:
   securitySchemes:
     bearerAuth:
@@ -270,6 +367,22 @@ components:
         id:
           type: integer
         name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    UrlReplacement:
+      properties:
+        id:
+          type: integer
+        test_plan_id:
+          type: integer
+        pattern_url:
+          type: string
+        replacement_url:
           type: string
         created_at:
           type: string
