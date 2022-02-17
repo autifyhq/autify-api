@@ -51,13 +51,60 @@ paths:
             type: integer
       responses:
         "200":
-          description: ok
+          description: |
+            ok
+
+            `123456` in the example response is the test plan result ID.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/TestPlanResult"
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: 123456
+                      type:
+                        type: string
+                        example: test_plan_result
+                      attributes:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                            example: 123456
+        "401":
+          description: Bad credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                          default: Bad credentials
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        message:
+                          type: string
+                          default: Not Found
   "/projects/{project_id}/scenarios":
     get:
       description: |
@@ -275,20 +322,23 @@ paths:
             `https://app.autify.com/projects/1/test_plans/15`
           schema:
             type: integer
-        - name: url_replacement
-          in: query
-          required: true
-          style: deepObject
-          schema:
-            type: object
-            properties:
-              pattern_url:
-                type: string
-                example: "https://mywebsite.com"
-              replacement_url:
-                type: string
-                example: "https://replacement.com"
-          description: The url to replace
+      requestBody:
+        description: The url to replace
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pattern_url:
+                  type: string
+                  example: "https://example.com"
+                replacement_url:
+                  type: string
+                  example: "https://example.net"
+              required:
+                - pattern_url
+                - replacement_url
       responses:
         "200":
           description: ok
@@ -323,6 +373,50 @@ paths:
                 items:
                   $ref: "#/components/schemas/UrlReplacement"
   "/test_plans/{test_plan_id}/url_replacements/{url_replacement_id}":
+    put:
+      description: |
+        # Update a url replacement for test plan
+      tags:
+        - url_replacement
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: test_plan_id
+          in: path
+          required: true
+          description: |
+            For example, the `{test_plan_id}` for the following URL is **15**.<br/>
+            `https://app.autify.com/projects/1/test_plans/15`
+          schema:
+            type: integer
+        - name: url_replacement_id
+          in: path
+          required: true
+          description: |
+            url_replacement id
+          schema:
+            type: integer
+      requestBody:
+        description: The url to replace
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                replacement_url:
+                  type: string
+                  example: "https://example.net"
+              required:
+                - replacement_url
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: "#/components/schemas/UrlReplacement"
     delete:
       description: |
         # Delete url replacement for test plan
@@ -374,6 +468,10 @@ components:
         updated_at:
           type: string
           format: date-time
+        labels:
+          type: array
+          items:
+            $ref: "#/components/schemas/Label"
     UrlReplacement:
       properties:
         id:
@@ -506,6 +604,20 @@ components:
         finished_at:
           type: string
           format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Label:
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
         created_at:
           type: string
           format: date-time
