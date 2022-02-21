@@ -397,18 +397,19 @@ paths:
           schema:
             type: integer
       requestBody:
-        description: The url to replace
+        description: The url to replace. Either pattern_url or replacement_url is required.
         required: true
         content:
           application/json:
             schema:
               type: object
               properties:
+                pattern_url:
+                  type: string
+                  example: "https://example.org"
                 replacement_url:
                   type: string
                   example: "https://example.net"
-              required:
-                - replacement_url
       responses:
         "200":
           description: ok
