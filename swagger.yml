@@ -305,6 +305,47 @@ paths:
                       updated_at:
                         type: string
                         format: date-time
+  "/projects/{project_id}/capabilities":
+    get:
+      description: |
+        # Get available Capabilitis
+      tags:
+        - capability
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: |
+            For example, the `{project_id}` for the following URL is **1**.<br/>
+            `https://app.autify.com/projects/1/capabilities`
+          schema:
+            type: integer
+        - in: query
+          name: os
+          schema:
+            type: string
+          description: os name to filter
+        - in: query
+          name: browser
+          schema:
+            type: string
+          description: browser name to filter
+        - in: query
+          name: device_type
+          schema:
+            type: string
+          description: device_type name to filter
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CapabilityOption"
   "/test_plans/{test_plan_id}/url_replacements":
     post:
       description: |
@@ -511,6 +552,22 @@ components:
         updated_at:
           type: string
           format: date-time
+    CapabilityOption:
+      properties:
+        os:
+          type: string
+        os_version:
+          type: string
+        browser:
+          type: string
+        browser_version:
+          type: string
+        device:
+          type: string
+        device_type:
+          type: string
+        unsupported:
+          type: boolean
     TestPlan:
       properties:
         id:
