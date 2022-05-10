@@ -346,7 +346,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/CapabilityOption"
-  "/project/{project_id}/execute_scenarios":
+  "/projects/{project_id}/execute_scenarios":
     post:
       description: |
         You can execute any scenarios in your workspace using any execution environments (which is called "capabilities" here).
