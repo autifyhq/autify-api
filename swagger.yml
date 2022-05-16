@@ -32,6 +32,7 @@ servers:
 paths:
   "/schedules/{schedule_id}":
     post:
+      operationId: describeSchedule
       description: |
         _Note: the Schedule is the TestPlan now._<br/><br/>
         In order to request executing the test plan `https://app.autify.com/projects/1/test_plans/3` , specify the following URL for API call `https://app.autify.com/api/v1/schedules/3` .<br/><br/>
@@ -107,6 +108,7 @@ paths:
                           default: Not Found
   "/projects/{project_id}/scenarios":
     get:
+      operationId: listScenarios
       description: |
         # List scenarios
       tags:
@@ -140,6 +142,7 @@ paths:
                   $ref: "#/components/schemas/Story"
   "/projects/{project_id}/scenarios/{scenario_id}":
     get:
+      operationId: describeScenario
       description: |
         # Get a scenario
       tags:
@@ -172,6 +175,7 @@ paths:
                 $ref: "#/components/schemas/Story"
   "/projects/{project_id}/results":
     get:
+      operationId: listResults
       description: |
         # List results
         The same content as listed on https://app.autify.com/projects/{project_id}/results will be returned.
@@ -221,6 +225,7 @@ paths:
                   $ref: "#/components/schemas/TestPlanResult"
   "/projects/{project_id}/results/{result_id}":
     get:
+      operationId: describeResult
       description: |
         # Get a result
         The same content as shown on https://app.autify.com/projects/{project_id}/results/{result_id} will be returned.
@@ -307,6 +312,7 @@ paths:
                         format: date-time
   "/projects/{project_id}/capabilities":
     get:
+      operationId: listCapabilities
       description: |
         # Get available Capabilitis
       tags:
@@ -348,6 +354,7 @@ paths:
                   $ref: "#/components/schemas/CapabilityOption"
   "/projects/{project_id}/execute_scenarios":
     post:
+      operationId: executeScenarios
       description: |
         You can execute any scenarios in your workspace using any execution environments (which is called "capabilities" here).
         Use scenarios API to get scenario ids and use capabilities API to get available capabilities for you.
@@ -418,6 +425,7 @@ paths:
                           default: Not Found
   "/test_plans/{test_plan_id}/url_replacements":
     post:
+      operationId: createUrlReplacement
       description: |
         # Create new url replacement for test plan
       tags:
@@ -459,6 +467,7 @@ paths:
                 type: object
                 $ref: "#/components/schemas/UrlReplacement"
     get:
+      operationId: listUrlReplacements
       description: |
         # List url replacement for test plan
       tags:
@@ -485,6 +494,7 @@ paths:
                   $ref: "#/components/schemas/UrlReplacement"
   "/test_plans/{test_plan_id}/url_replacements/{url_replacement_id}":
     put:
+      operationId: updateUrlReplacement
       description: |
         # Update a url replacement for test plan
       tags:
@@ -530,6 +540,7 @@ paths:
                 type: object
                 $ref: "#/components/schemas/UrlReplacement"
     delete:
+      operationId: deleteUrlReplacement
       description: |
         # Delete url replacement for test plan
       tags:
