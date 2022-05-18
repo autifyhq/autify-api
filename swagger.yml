@@ -448,16 +448,7 @@ paths:
           application/json:
             schema:
               type: object
-              properties:
-                pattern_url:
-                  type: string
-                  example: "https://example.com"
-                replacement_url:
-                  type: string
-                  example: "https://example.net"
-              required:
-                - pattern_url
-                - replacement_url
+              $ref: "#/components/schemas/CreateUrlReplacementRequest"
       responses:
         "200":
           description: ok
@@ -524,13 +515,7 @@ paths:
           application/json:
             schema:
               type: object
-              properties:
-                pattern_url:
-                  type: string
-                  example: "https://example.org"
-                replacement_url:
-                  type: string
-                  example: "https://example.net"
+              $ref: "#/components/schemas/UpdateUrlReplacementRequest"
       responses:
         "200":
           description: ok
@@ -798,14 +783,7 @@ components:
           type: array
           items:
             type: object
-            required:
-              - pattern_url
-              - replacement_url
-            properties:
-              pattern_url:
-                type: string
-              replacement_url:
-                type: string
+            $ref: "#/components/schemas/CreateUrlReplacementRequest"
         scenarios:
           type: array
           items:
@@ -821,3 +799,22 @@ components:
       properties:
         result_id:
           type: integer
+    CreateUrlReplacementRequest:
+      properties:
+        pattern_url:
+          type: string
+          example: "https://example.com"
+        replacement_url:
+          type: string
+          example: "https://example.net"
+      required:
+        - pattern_url
+        - replacement_url
+    UpdateUrlReplacementRequest:
+      properties:
+        pattern_url:
+          type: string
+          example: "https://example.com"
+        replacement_url:
+          type: string
+          example: "https://example.net"
