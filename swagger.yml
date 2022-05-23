@@ -32,7 +32,7 @@ servers:
 paths:
   "/schedules/{schedule_id}":
     post:
-      operationId: describeSchedule
+      operationId: executeSchedule
       description: |
         _Note: the Schedule is the TestPlan now._<br/><br/>
         In order to request executing the test plan `https://app.autify.com/projects/1/test_plans/3` , specify the following URL for API call `https://app.autify.com/api/v1/schedules/3` .<br/><br/>
@@ -65,7 +65,7 @@ paths:
                     type: object
                     properties:
                       id:
-                        type: string
+                        type: number
                         example: 123456
                       type:
                         type: string
@@ -76,6 +76,12 @@ paths:
                           id:
                             type: integer
                             example: 123456
+                    required:
+                      - "id"
+                      - "type"
+                      - "attributes"
+                required:
+                  - "data"
         "401":
           description: Bad credentials
           content:
@@ -596,6 +602,13 @@ components:
         updated_at:
           type: string
           format: date-time
+      required:
+        - "id"
+        - "test_plan_id"
+        - "pattern_url"
+        - "replacement_url"
+        - "created_at"
+        - "updated_at"
     Capability:
       properties:
         id:
@@ -734,6 +747,12 @@ components:
         updated_at:
           type: string
           format: date-time
+        test_case_id:
+          type: integer
+        project_url:
+          type: string
+        review_needed:
+          type: integer
     Label:
       properties:
         id:
@@ -767,15 +786,14 @@ components:
           type: array
           items:
             type: object
-            required:
-              - os
-              - browser
             properties:
               os:
                 type: string
               os_version:
                 type: string
               device:
+                type: string
+              device_type:
                 type: string
               browser:
                 type: string
