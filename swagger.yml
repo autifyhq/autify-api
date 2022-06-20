@@ -145,7 +145,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Story"
+                  $ref: "#/components/schemas/Scenario"
   "/projects/{project_id}/scenarios/{scenario_id}":
     get:
       operationId: describeScenario
@@ -178,7 +178,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Story"
+                $ref: "#/components/schemas/Scenario"
   "/projects/{project_id}/results":
     get:
       operationId: listResults
@@ -275,6 +275,7 @@ paths:
                       - passed
                       - failed
                       - skipped
+                      - internal_error
                     default: waiting
                   duration:
                     type: integer
@@ -665,6 +666,7 @@ components:
             - passed
             - failed
             - skipped
+            - internal_error
           default: waiting
         duration:
           type: integer
@@ -705,6 +707,7 @@ components:
             - passed
             - failed
             - skipped
+            - internal_error
           default: waiting
         duration:
           type: integer
@@ -732,6 +735,7 @@ components:
             - passed
             - failed
             - skipped
+            - internal_error
           default: waiting
         duration:
           type: integer
