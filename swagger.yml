@@ -815,6 +815,13 @@ components:
             properties:
               id:
                 type: integer
+        autify_connect:
+          type: object
+          required:
+            - name
+          properties:
+            name:
+              type: string
     ExecuteScenariosResult:
       required:
         - result_id
