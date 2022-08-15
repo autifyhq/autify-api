@@ -571,7 +571,7 @@ components:
       scheme: bearer
       bearerFormat: http
   schemas:
-    Story:
+    Scenario:
       properties:
         id:
           type: integer
