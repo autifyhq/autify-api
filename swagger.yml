@@ -409,6 +409,58 @@ paths:
                         message:
                           type: string
                           default: Not Found
+  "/projects/{project_id}/autify_connect/access_points":
+    post:
+      operationId: createAccessPoint
+      description: |
+        You can generate a new access point by passing in its name.
+      tags:
+        - autify_connect
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: |
+            For example, 1 for the following URL: https://app.autify.com/projects/1/scenarios
+          schema:
+            type: integer
+      requestBody:
+        description: The name of the access point to be created
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              $ref: "#/components/schemas/CreateAccessPointRequest"
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: "#/components/schemas/CreateAccessPointResult"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: integer
+                          default: 400
+                        message:
+                          type: string
+                          default: "Access Point Name {access point name} has already been taken"
+
   "/test_plans/{test_plan_id}/url_replacements":
     post:
       operationId: createUrlReplacement
@@ -805,6 +857,31 @@ components:
       properties:
         result_id:
           type: integer
+    CreateAccessPointRequest:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: "Name of the access point to be created"
+    CreateAccessPointResult:
+      required:
+        - name
+        - key
+        - creator
+      properties:
+        name:
+          type: string
+        key:
+          type: string
+        creator:
+          type: string
+        last_use:
+          type: string
+        created_at:
+          type: string
+        updated_at:
+          type: string
     CreateUrlReplacementRequest:
       properties:
         pattern_url:
