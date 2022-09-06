@@ -460,7 +460,55 @@ paths:
                         message:
                           type: string
                           default: "Access Point Name {access point name} has already been taken"
-
+    delete:
+      operationId: deleteAccessPoint
+      description: |
+        You can delete an access point by passing in its name.
+      tags:
+        - autify_connect
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: |
+            For example, 1 for the following URL: https://app.autify.com/projects/1/scenarios
+          schema:
+            type: integer
+      requestBody:
+        description: The name of the access point to be deleted
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              $ref: "#/components/schemas/DeleteAccessPointRequest"
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: integer
+                          default: 404
+                        message:
+                          type: string
+                          default: "Access Point {access point name} was not found."
   "/test_plans/{test_plan_id}/url_replacements":
     post:
       operationId: createUrlReplacement
@@ -864,6 +912,13 @@ components:
         name:
           type: string
           description: "Name of the access point to be created"
+    DeleteAccessPointRequest:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: "Name of the access point to be deleted"
     CreateAccessPointResult:
       required:
         - name
