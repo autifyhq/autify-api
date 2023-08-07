@@ -833,6 +833,9 @@ components:
         review_needed:
           type: integer
           description: Number of "Review needed" flags present in the test results.
+        number_of_credits_consumed:
+          type: integer
+          description: Number of credits consumed by this test result. (default 0 for test result created before credit based system)
         import_variables:
           description: THIS FEATURE IS FOR LIMITED NUMBER OF CUSTOMERS. Variables imported from previously executed test results in a test plan.
           type: array
