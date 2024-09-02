@@ -1008,6 +1008,13 @@ components:
         - edge
         - edge_legacy
         - ie
+    TimezoneEnum:
+      type: string
+      enum:
+        - JST
+        - UTC
+        - Asia/Tokyo
+        - Etc/UTC
     OsTypeEnum:
       type: string
       enum:
@@ -1031,6 +1038,8 @@ components:
           type: string
         device:
           type: string
+        timezone:
+          $ref: "#/components/schemas/TimezoneEnum"
         resolution:
           type: string
         created_at:
@@ -1228,6 +1237,8 @@ components:
                 $ref: "#/components/schemas/BrowserTypeEnum"
               browser_version:
                 type: string
+              timezone:
+                $ref: "#/components/schemas/TimezoneEnum"
         url_replacements:
           type: array
           items:
