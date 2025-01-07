@@ -139,7 +139,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Scenario"
+                  $ref: "#/components/schemas/ScenarioDetail"
   "/projects/{project_id}/scenarios/{scenario_id}":
     get:
       operationId: describeScenario
@@ -170,7 +170,76 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Scenario"
+                $ref: "#/components/schemas/ScenarioDetail"
+    put:
+      operationId: updateScenario
+      description: |
+        Update a scenario.
+      tags:
+        - scenario
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: |
+            For example, 1 for the following URL: https://app.autify.com/projects/1/scenarios/2
+          schema:
+            type: integer
+        - name: scenario_id
+          in: path
+          required: true
+          description: |
+            For example, 2 for the following URL: https://app.autify.com/projects/1/scenarios/2
+          schema:
+            type: integer
+      requestBody:
+        description: The scenario to update
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              $ref: "#/components/schemas/UpdateScenarioRequest"
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioDetail"
+  "/projects/{project_id}/scenarios/{scenario_id}/duplications":
+    post:
+      operationId: duplicateScenario
+      description: |
+        Duplicate a scenario.
+      tags:
+        - scenario
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: project_id
+          in: path
+          required: true
+          description: |
+            For example, 1 for the following URL: https://app.autify.com/projects/1/scenarios/2
+          schema:
+            type: integer
+        - name: scenario_id
+          in: path
+          required: true
+          description: |
+            For example, 2 for the following URL: https://app.autify.com/projects/1/scenarios/2
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioDetail"
   "/projects/{project_id}/results":
     get:
       operationId: listResults
@@ -943,6 +1012,62 @@ components:
         updated_at:
           type: string
           format: date-time
+        author:
+          $ref: "#/components/schemas/User"
+        updater:
+          $ref: "#/components/schemas/User"
+        labels:
+          type: array
+          items:
+            $ref: "#/components/schemas/Label"
+    ScenarioDetail:
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              row_order:
+                type: integer
+              step_keyword:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  step_arguments:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      value:
+                        oneOf:
+                          - type: string
+                          - type: boolean
+                  translated_keyword:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                      created_at:
+                        type: string
+                        format: date-time
+                      updated_at:
+                        type: string
+                        format: date-time
         labels:
           type: array
           items:
@@ -1403,6 +1528,22 @@ components:
           type: integer
         test_plans_count:
           type: integer
+    User:
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+    UpdateScenarioRequest:
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        labels:
+          type: array
+          items:
+            type: string
 
 tags:
   - name: schedule
