@@ -139,7 +139,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ScenarioDetail"
+                  $ref: "#/components/schemas/Scenario"
   "/projects/{project_id}/scenarios/{scenario_id}":
     get:
       operationId: describeScenario
@@ -1032,6 +1032,10 @@ components:
         updated_at:
           type: string
           format: date-time
+        author:
+          $ref: "#/components/schemas/User"
+        updater:
+          $ref: "#/components/schemas/User"
         steps:
           type: array
           items:
