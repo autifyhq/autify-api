@@ -375,6 +375,55 @@ paths:
                       "$ref": "#/components/schemas/TestPlanCapabilityResult"
                   test_plan:
                     "$ref": "#/components/schemas/TestPlan"
+  "/projects/{project_id}/test_case_results/{test_case_result_id}":
+    get:
+      operationId: describeTestCaseResult
+      summary: Get the steps and element locators of a test case result.
+      description: |
+        Get the step-by-step breakdown of a single test case result, including the
+        element locators Autify resolved for each step.
+
+        A "test case result" is the execution of one scenario on one capability.
+        You can obtain its ID from the `test_plan_capability_results[].test_case_results[].id`
+        field returned by `describeResult`.
+
+        Use this to see which step failed and why, and to read back the locators
+        Autify generated for an element, which are usually better than a selector
+        you would write by hand.
+
+        Note: each step's `keyword` is the canonical (English) keyword name, not
+        the localized label shown in the UI or returned by `describeResult`
+        (`get_details`, which localizes it to the caller's language).
+
+        Values typed into a password field are returned as `******`.
+      tags:
+      - result
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        description: 'For example, 1 for the following URL: https://app.autify.com/projects/1/results/4
+
+          '
+        schema:
+          type: integer
+      - name: test_case_result_id
+        in: path
+        required: true
+        description: |
+          The ID of the test case result. Obtainable from the `test_case_results[].id`
+          field of `describeResult`.
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/TestCaseResultDetail"
   "/projects/{project_id}/capabilities":
     get:
       operationId: listCapabilities
@@ -1368,6 +1417,155 @@ components:
                 type: string
               value:
                 type: string
+    TestCaseResultDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        scenario_id:
+          type: integer
+          description: ID of the scenario (test case) that was executed.
+        status:
+          "$ref": "#/components/schemas/TestCaseResultStatus"
+        started_at:
+          type: string
+          format: date-time
+        finished_at:
+          type: string
+          format: date-time
+        duration:
+          type: integer
+        project_url:
+          type: string
+        capability:
+          "$ref": "#/components/schemas/Capability"
+        steps:
+          type: array
+          items:
+            "$ref": "#/components/schemas/TestCaseResultStep"
+    TestCaseResultStep:
+      type: object
+      properties:
+        index:
+          type: string
+          description: |
+            Step number within the executed test case, matching the numbering shown
+            in the result UI and returned by `describeResult` (`get_details`). Steps
+            inside a step group collapse onto one first-level number and get a
+            sub-number, e.g. "1", "2", "3-1", "3-2".
+        step_id:
+          type: integer
+        composite_id:
+          type: string
+          description: Identifier that is unique even when the step runs inside a
+            step group.
+        step_name:
+          type: string
+          description: Human-readable name of the step.
+        keyword:
+          type: string
+          description: The action performed by the step (e.g. "Click Element", "Input
+            Text").
+        arguments:
+          type: array
+          description: |
+            Meaningful keyword arguments, with internal locator plumbing removed.
+            A value typed into a password field is returned as `******`.
+          items:
+            type: string
+        status:
+          type: string
+          description: Result of the step.
+          enum:
+          - passed
+          - failed
+          - skipped
+        error_message:
+          type: string
+          nullable: true
+          description: Error message when the step failed.
+        element:
+          type: object
+          nullable: true
+          description: |
+            The element this step targets, and what the run was given to find it with.
+            Absent for steps that do not target an element.
+          properties:
+            element_id:
+              type: integer
+              nullable: true
+              description: ID of the Autify element targeted by the step.
+            user_locator:
+              type: string
+              nullable: true
+              description: Locator explicitly specified by the user, when present.
+            candidate_locators:
+              type: array
+              nullable: true
+              description: |
+                Selectors Autify had available going into this run. These come from what
+                Autify learned on earlier runs, so a step that has never passed has none.
+                They work as a set, not as alternatives. When Autify matches on them it
+                requires every one to resolve to the same element, so a single one may be
+                ambiguous alone and is not safe to pin on its own. Order is the order Autify
+                generated them in, and carries no ranking.
+              items:
+                type: string
+        match:
+          type: object
+          nullable: true
+          description: |
+            How this run found the element. Absent when the step targets no element,
+            when the step failed before finding one, and for results captured before
+            Autify recorded how it matched.
+          properties:
+            located_by:
+              type: string
+              description: |
+                How Autify found the element: `user_locator` when it matched the locator
+                you specified on the step, `automatic` when Autify matched it for you.
+              enum:
+              - user_locator
+              - automatic
+            confidence:
+              type: number
+              nullable: true
+              description: |
+                How confident Autify was in the element it matched. Around 1 is an
+                exact match; lower means a looser one.
+            candidate_locators:
+              type: array
+              nullable: true
+              description: |
+                Selectors Autify generated from the element it actually found. These are
+                what later runs will match on.
+                They work as a set, not as alternatives. When Autify matches on them it
+                requires every one to resolve to the same element, so a single one may be
+                ambiguous alone and is not safe to pin on its own. Order is the order Autify
+                generated them in, and carries no ranking.
+              items:
+                type: string
+        url_events:
+          type: array
+          description: |
+            The URL the browser was on when the step started and when it finished, so a
+            step that navigated can be told from one that did not. Only URLs of the
+            application under test appear: not the browser's own start page, so the first
+            step usually reports just its end, and not Autify's email inbox, which a step
+            that opens an email navigates to.
+          items:
+            type: object
+            properties:
+              timing:
+                type: string
+                enum:
+                - stepStart
+                - stepEnd
+              url:
+                type: string
+              at:
+                type: integer
+                description: Unix timestamp in milliseconds.
     Label:
       properties:
         id:
