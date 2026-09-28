@@ -147,9 +147,21 @@ paths:
   "/projects/{project_id}/scenarios/{scenario_id}":
     get:
       operationId: describeScenario
-      description: 'Get a scenario.
+      description: |
+        Get a scenario, with its steps, data table and variables.
 
-        '
+        Each step names its keyword by the canonical English name that
+        `listStepKeywords` publishes, and lists its arguments in that keyword's
+        argument order. An argument that targets an element carries the locators
+        Autify matches it by, rather than a placeholder.
+
+        An `Execute Step Group` step is reported as a reference to its step group
+        rather than expanded in place; read the group itself with this endpoint,
+        using the `step_group_id` from the step's argument.
+
+        A step recorded on a password field is masked: values typed into it are
+        returned as `******` and the element's `candidate_locators` are withheld,
+        as on `describeTestCaseResult`.
       tags:
       - scenario
       security:
@@ -219,6 +231,31 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/ScenarioDetail"
+        '400':
+          description: |
+            `on_create` was false and a label name this project does not have was
+            supplied, or `on_create` was neither `true` nor `false`, or a label name
+            the project would have to create is not a valid label name, or
+            `version_token` was sent empty rather than omitted.
+        '412':
+          description: |
+            The scenario changed after the version you named. Read the scenario again and
+            retry against the `version_token` you get back.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: integer
+                          default: 412
+                        message:
+                          type: string
   "/projects/{project_id}/scenarios/{scenario_id}/duplications":
     post:
       operationId: duplicateScenario
@@ -253,6 +290,69 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/ScenarioDetail"
+  "/projects/{project_id}/scenarios/{scenario_id}/results":
+    get:
+      operationId: listScenarioResults
+      summary: List the test results of one scenario.
+      description: |
+        List the test results of a single scenario, newest first.
+
+        Each entry is one execution of that scenario on one capability, so a
+        scenario run against three browsers contributes three entries. Use this
+        to see how one scenario has been doing over time, which `listResults`
+        cannot answer: that endpoint returns whole test plan executions and is
+        filterable only by test plan.
+
+        `review_needed` is the number of "Review needed" element warnings raised
+        by that execution. A count that climbs over recent results means the
+        scenario's element locators are drifting.
+      tags:
+      - result
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        description: 'For example, 1 for the following URL: https://app.autify.com/projects/1/scenarios/2
+
+          '
+        schema:
+          type: integer
+      - name: scenario_id
+        in: path
+        required: true
+        description: 'For example, 2 for the following URL: https://app.autify.com/projects/1/scenarios/2
+
+          '
+        schema:
+          type: integer
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+        description: The number of page returns.
+      - name: per_page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 30
+        description: The number of items returns. Default number is 30 and up to a
+          maximum of 100
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/ScenarioTestCaseResult"
   "/projects/{project_id}/results":
     get:
       operationId: listResults
@@ -391,9 +491,9 @@ paths:
         Autify generated for an element, which are usually better than a selector
         you would write by hand.
 
-        Note: each step's `keyword` is the canonical (English) keyword name, not
-        the localized label shown in the UI or returned by `describeResult`
-        (`get_details`, which localizes it to the caller's language).
+        Note: a step reports its keyword as `action_type`, the same enum
+        `listStepKeywords` and `describeScenario` use, rather than as a name. The
+        localized label the UI shows appears only in `describeResult` (`get_details`).
 
         Values typed into a password field are returned as `******`.
       tags:
@@ -479,6 +579,42 @@ paths:
                 type: array
                 items:
                   "$ref": "#/components/schemas/CapabilityOption"
+  "/projects/{project_id}/step_keywords":
+    get:
+      operationId: listStepKeywords
+      description: |
+        List every step keyword an Autify NoCode Web scenario can be built from,
+        with the ordered argument signature of each.
+
+        Supply a step's arguments in the order `arguments` gives them. A keyword
+        whose `included_in_plan` is false is not part of this workspace's plan, and
+        writing a step that uses it is rejected; every keyword is listed either way,
+        so the whole vocabulary is visible.
+
+        `keyword` is the canonical English name and is what the rest of the API
+        expects, whatever language the workspace is set to.
+      tags:
+      - scenario
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        description: 'For example, 1 for the following URL: https://app.autify.com/projects/1/scenarios
+
+          '
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/StepKeyword"
   "/projects/{project_id}/execute_scenarios":
     post:
       operationId: executeScenarios
@@ -1133,6 +1269,11 @@ components:
       properties:
         id:
           type: integer
+        version_token:
+          type: string
+          description: |
+            Opaque version of the scenario as returned. Send it back as `version_token` on
+            an update to have that update rejected if the scenario changed in between.
         name:
           type: string
         created_at:
@@ -1145,46 +1286,230 @@ components:
           "$ref": "#/components/schemas/User"
         updater:
           "$ref": "#/components/schemas/User"
+        description:
+          type: string
+        project_url:
+          type: string
         steps:
           type: array
+          description: 'The scenario''s steps, in execution order.
+
+            '
+          items:
+            "$ref": "#/components/schemas/ScenarioStep"
+        data_table:
+          type: array
+          description: 'The scenario''s data table, one entry per row.
+
+            '
           items:
             type: object
-            properties:
-              id:
-                type: integer
-              row_order:
-                type: integer
-              step_keyword:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                  step_arguments:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                      value:
-                        oneOf:
-                        - type: string
-                        - type: boolean
-                  translated_keyword:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                      name:
-                        type: string
-                      created_at:
-                        type: string
-                        format: date-time
-                      updated_at:
-                        type: string
-                        format: date-time
+        variables:
+          "$ref": "#/components/schemas/ScenarioVariables"
         labels:
           type: array
           items:
             "$ref": "#/components/schemas/Label"
+    ScenarioStep:
+      properties:
+        id:
+          type: integer
+        action_type:
+          type: string
+          nullable: true
+          description: |
+            The step's keyword in enum form, for example `INPUT_TEXT`. This is the
+            same value the write API takes, and the `action_type` `listStepKeywords`
+            publishes. Null for a legacy keyword that has no enum member.
+        name:
+          type: string
+          description: The step's name, as shown in the scenario editor.
+        memo:
+          type: string
+        on_failure:
+          type: string
+          enum:
+          - abort
+          - continue
+          - ignore
+          description: What the run does when this step fails.
+        step_execution_type:
+          type: string
+          enum:
+          - scenario_step
+          - cleanup_step
+          description: |
+            Whether the step runs as part of the scenario or as a cleanup step
+            afterwards.
+        assign:
+          type: string
+          nullable: true
+          description: |
+            The identifier this step's result is assigned to. Two kinds of value
+            appear here. A step that an export variable reads from carries that
+            variable's key, which you chose. A JavaScript step instead carries a
+            generated key shaped `${<32 hex characters>}`, which is machine-owned:
+            copy it verbatim and do not invent one. An `assign` does not imply that
+            an export variable exists for the step.
+        arguments:
+          type: array
+          description: |
+            The step's arguments, in the order `listStepKeywords` gives them for
+            this keyword. Optional arguments the step does not set are absent, so
+            match an argument by its `name` rather than by position.
+
+            A run's steps carry the same names and types, under `ResultStepArgument`,
+            with a different arity: this endpoint leaves out an optional argument the
+            step never set, while a run emits every slot its keyword declares. There a
+            `file` argument reports just `file_name`, and `step_group` appears only
+            here.
+          items:
+            "$ref": "#/components/schemas/ScenarioStepArgument"
+    ScenarioStepArgument:
+      description: 'An argument to a step. Which fields are present depends on `type`.
+
+        '
+      properties:
+        name:
+          type: string
+          nullable: true
+          description: |
+            Name of the argument, matching the `name` `listStepKeywords` publishes
+            for this keyword's argument in the same slot.
+        type:
+          type: string
+          enum:
+          - text
+          - url
+          - file
+          - element
+          - step_group
+          description: |
+            `text` and `url` carry `value`. `file` carries `file_name`,
+            `file_size` and `object_key`. `element` carries `element_id`,
+            `user_locator` and `candidate_locators`. `step_group` carries
+            `step_group_id`.
+        value:
+          description: |
+            The value, for a `text` or `url` argument. A value typed into a
+            password field is returned as `******`.
+          oneOf:
+          - type: string
+          - type: boolean
+        element_id:
+          type: integer
+          description: 'Identifier of the element this step targets. Read only.
+
+            '
+        user_locator:
+          type: string
+          nullable: true
+          description: |
+            The CSS or XPath selector pinned to this element, if one is set. The
+            `css:` or `xpath:` prefix is part of the value.
+        candidate_locators:
+          type: array
+          nullable: true
+          description: |
+            The locators Autify generated for this element on its last passing
+            run, which is how the step is matched when no `user_locator` is set.
+            Read only, and empty until the scenario has passed once. `null` when
+            the step was recorded on a password field, which withholds them.
+          items:
+            type: string
+        file_name:
+          type: string
+          nullable: true
+        file_size:
+          type: integer
+          nullable: true
+        object_key:
+          type: string
+          nullable: true
+        step_group_id:
+          type: integer
+          description: |
+            The step group this step runs. Read it with `describeScenario` using
+            this id.
+    ResultStepArgument:
+      description: |
+        An argument to a step of a run. The vocabulary matches `ScenarioStepArgument`;
+        which fields are present depends on `type`.
+      properties:
+        name:
+          type: string
+          nullable: true
+          description: |
+            Name of the argument, matching the `name` `listStepKeywords` publishes for
+            this keyword's argument in the same slot. Null for a value the run carried
+            beyond the arguments the keyword declares.
+        type:
+          type: string
+          enum:
+          - text
+          - url
+          - file
+          - element
+          description: |
+            `text` and `url` carry `value`. `file` carries `file_name`. `element`
+            carries `element_id`, `user_locator` and `candidate_locators`.
+        value:
+          description: |
+            The value, for a `text` or `url` argument, and null for a declared slot the
+            run did not fill. A boolean argument returns a real boolean, matching what
+            `describeScenario` returns for the same step.
+          oneOf:
+          - type: string
+          - type: boolean
+        file_name:
+          type: string
+          nullable: true
+          description: The uploaded file's name, without the storage path it is kept
+            under.
+        element_id:
+          type: integer
+          nullable: true
+          description: ID of the Autify element targeted by the step.
+        user_locator:
+          type: string
+          nullable: true
+          description: |
+            Locator explicitly specified by the user, when present. Null for a password
+            field, whose locator can embed the value.
+        candidate_locators:
+          type: array
+          description: |
+            Selectors Autify had available going into this run, the same flat list
+            `describeScenario` returns for the element. These come from what Autify
+            learned on earlier runs, so a step that has never passed has none.
+            They work as a set, not as alternatives. When Autify matches on them it
+            requires every one to resolve to the same element, so a single one may be
+            ambiguous alone and is not safe to pin on its own. Order is the order Autify
+            generated them in, and carries no ranking. Empty for a password field, whose
+            locators can embed the value.
+          items:
+            type: string
+    ScenarioVariables:
+      properties:
+        import:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+              default_value:
+                type: string
+        export:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+              step_id:
+                type: integer
+                nullable: true
     AccessPoint:
       properties:
         name:
@@ -1308,6 +1633,59 @@ components:
           type: boolean
           deprecated: true
           description: "(deprecated)"
+    StepKeyword:
+      properties:
+        keyword:
+          type: string
+          description: |
+            Canonical English name of the keyword, for example `Input Text`. This is
+            the name the rest of the API expects, in every workspace language.
+        action_type:
+          type: string
+          description: 'The same keyword in enum form, for example `INPUT_TEXT`.
+
+            '
+        included_in_plan:
+          type: boolean
+          description: |
+            Whether this workspace's plan includes the keyword. Writing a step whose
+            keyword is not included is rejected with 402.
+        arguments:
+          type: array
+          description: |
+            The keyword's arguments, in the order they must be supplied. Empty for a
+            keyword that takes none.
+          items:
+            "$ref": "#/components/schemas/StepKeywordArgument"
+    StepKeywordArgument:
+      properties:
+        name:
+          type: string
+          description: Name of the argument as the scenario editor shows it.
+        type:
+          type: string
+          enum:
+          - text
+          - url
+          - file
+          - element
+          description: |
+            What the argument accepts. `text` is a plain string, `url` an address,
+            `file` an uploaded file, and `element` an element on the page.
+        element_type:
+          type: string
+          description: |
+            Present only when `type` is `element` and the keyword expects a particular
+            kind of element, for example `element_textfield` for Input Text or
+            `element_checkbox` for Checkbox Should Be Selected.
+
+            An element is supplied as a locator string whose `css:` or `xpath:` prefix
+            is mandatory: a `css:` selector descends into shadow DOM where `xpath:`
+            does not, the first match wins if a selector is ambiguous, a selector
+            resolving outside `<body>` raises, and the lookup is retried for 30 seconds
+            before the step fails.
+        required:
+          type: boolean
     TestPlan:
       type: object
       nullable: true
@@ -1417,6 +1795,15 @@ components:
                 type: string
               value:
                 type: string
+    ScenarioTestCaseResult:
+      allOf:
+      - "$ref": "#/components/schemas/TestCaseResult"
+      - type: object
+        properties:
+          capability:
+            allOf:
+            - "$ref": "#/components/schemas/Capability"
+            nullable: true
     TestCaseResultDetail:
       type: object
       properties:
@@ -1453,26 +1840,49 @@ components:
             in the result UI and returned by `describeResult` (`get_details`). Steps
             inside a step group collapse onto one first-level number and get a
             sub-number, e.g. "1", "2", "3-1", "3-2".
-        step_id:
+        id:
           type: integer
+          description: |
+            ID of the scenario step this ran, the same identifier `describeScenario`
+            returns as a step's `id`.
         composite_id:
           type: string
           description: Identifier that is unique even when the step runs inside a
             step group.
-        step_name:
+        name:
           type: string
           description: Human-readable name of the step.
-        keyword:
+        on_failure:
           type: string
-          description: The action performed by the step (e.g. "Click Element", "Input
-            Text").
+          enum:
+          - abort
+          - continue
+          - ignore
+          description: What the run does when this step fails.
+        step_execution_type:
+          type: string
+          enum:
+          - scenario_step
+          - cleanup_step
+          description: |
+            Whether the step runs as part of the scenario or as a cleanup step
+            afterwards.
+        action_type:
+          type: string
+          description: |
+            The action identifier `listStepKeywords` and `describeScenario` also use,
+            so a run's step and the scenario step it came from read the same way. A step
+            whose keyword the catalog does not have is not returned at all, where
+            `describeScenario` keeps it with a null `action_type`; the gap it leaves in
+            `index` is the only trace of it here.
         arguments:
           type: array
           description: |
-            Meaningful keyword arguments, with internal locator plumbing removed.
-            A value typed into a password field is returned as `******`.
+            The step's arguments, in the order `listStepKeywords` gives them for this
+            keyword, each carrying the `name` that catalog publishes. A value typed
+            into a password field is returned as `******`.
           items:
-            type: string
+            "$ref": "#/components/schemas/ResultStepArgument"
         status:
           type: string
           description: Result of the step.
@@ -1484,33 +1894,6 @@ components:
           type: string
           nullable: true
           description: Error message when the step failed.
-        element:
-          type: object
-          nullable: true
-          description: |
-            The element this step targets, and what the run was given to find it with.
-            Absent for steps that do not target an element.
-          properties:
-            element_id:
-              type: integer
-              nullable: true
-              description: ID of the Autify element targeted by the step.
-            user_locator:
-              type: string
-              nullable: true
-              description: Locator explicitly specified by the user, when present.
-            candidate_locators:
-              type: array
-              nullable: true
-              description: |
-                Selectors Autify had available going into this run. These come from what
-                Autify learned on earlier runs, so a step that has never passed has none.
-                They work as a set, not as alternatives. When Autify matches on them it
-                requires every one to resolve to the same element, so a single one may be
-                ambiguous alone and is not safe to pin on its own. Order is the order Autify
-                generated them in, and carries no ranking.
-              items:
-                type: string
         match:
           type: object
           nullable: true
@@ -1803,14 +2186,42 @@ components:
           type: string
     UpdateScenarioRequest:
       properties:
+        version_token:
+          type: string
+          description: |
+            The version of the scenario you are updating, as returned by `version_token`
+            when you read it. The update is rejected with 412 if anyone changed the
+            scenario's name, description or labels in between, so read it again and retry
+            against the version you get back. Running the scenario does not change it. Sending an empty value is an error; omit the field entirely to update
+            whatever is there without checking.
         name:
           type: string
         description:
           type: string
         labels:
           type: array
+          description: |
+            Label names, replacing the scenario's current labels. A name this project
+            does not already have is created in it, unless `on_create` is false.
+
+            Only this project's labels are matched, so a label of the same name in
+            another project is never attached.
           items:
             type: string
+        on_create:
+          type: boolean
+          default: true
+          description: |
+            Whether to create a label named in `labels` that this project does not
+            have. Set it to false to have an unrecognised name rejected instead,
+            which is the safer setting when a name may be a typo.
+
+            Only `true` and `false` are accepted. Any other value is rejected with
+            400 rather than being read as `true`, so a typo in this flag cannot
+            silently turn label creation back on. A repeated name in `labels` is
+            attached once. A name the project would have to create but that the
+            label validations reject, such as one over 50 characters, is a 400
+            carrying the validation message.
 tags:
 - name: schedule
   description: '"Schedule" is called as "Test Plan" now.
