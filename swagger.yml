@@ -144,6 +144,46 @@ paths:
                 type: array
                 items:
                   "$ref": "#/components/schemas/Scenario"
+    post:
+      operationId: createScenario
+      description: |
+        Create an empty scenario, ready to be given steps.
+
+        The scenario is created with no steps. Add them with
+        `replaceScenarioSteps`, sending the `version_token` this call returns.
+      tags:
+      - scenario
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        description: 'For example, 1 for the following URL: https://app.autify.com/projects/1/scenarios
+
+          '
+        schema:
+          type: integer
+      requestBody:
+        description: The scenario to create
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              "$ref": "#/components/schemas/CreateScenarioRequest"
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ScenarioDetail"
+        '400':
+          description: |
+            The name is already used by another scenario in the project or is too
+            long, or a label could not be attached, for the same reasons
+            `updateScenario` gives.
   "/projects/{project_id}/scenarios/{scenario_id}":
     get:
       operationId: describeScenario
@@ -155,9 +195,17 @@ paths:
         argument order. An argument that targets an element carries the locators
         Autify matches it by, rather than a placeholder.
 
+        An element whose `user_locator_heals` is true treats `user_locator` as a
+        seed: Autify learns the element from it on the next passing run and matches
+        it automatically after that. Its `seed_locator` is the selector Autify last
+        learned from, and equals `user_locator` once that has happened. An element
+        whose `user_locator_heals` is false uses `user_locator` as a pin on every
+        run. `replaceScenarioSteps` sets it.
+
         An `Execute Step Group` step is reported as a reference to its step group
         rather than expanded in place; read the group itself with this endpoint,
-        using the `step_group_id` from the step's argument.
+        using the `step_group_id` from the step's argument. The values this call
+        site substitutes into the group come back beside it, in `overrides`.
 
         A step recorded on a password field is masked: values typed into it are
         returned as `******` and the element's `candidate_locators` are withheld,
@@ -256,6 +304,113 @@ paths:
                           default: 412
                         message:
                           type: string
+  "/projects/{project_id}/scenarios/{scenario_id}/steps":
+    put:
+      operationId: replaceScenarioSteps
+      description: |
+        Replace a scenario's steps. Send the whole list in the order the steps should
+        run; one call adds, edits, removes and reorders steps.
+
+        A step that carries an `id` from `describeScenario` is that existing step. A
+        step without an `id` is added. An existing step whose `id` is not in the list
+        is removed, so send `[]` to remove every step.
+
+        Each step and each of its arguments is a JSON merge patch against what
+        `describeScenario` returned. A field you send that differs from the current
+        value is changed, a field you leave out is kept, and `null` clears it. So
+        `{"id": 12}` keeps step 12 exactly as it is, at its new position, and sending
+        the read back unchanged changes nothing. Arguments are matched by `name`, as
+        `listStepKeywords` names them, so send only the arguments you change.
+
+        A new step needs an `action_type` from `listStepKeywords` and that keyword's
+        required arguments. Sending a different `action_type` for an existing step
+        rewrites it for the new keyword, keeping its `id` and carrying over the
+        arguments whose names the two keywords share.
+
+        When you write a `user_locator`, send `user_locator_heals: true` with it
+        unless the step must use that exact selector on every run. Autify then finds
+        the element by your selector on the next passing run, learns the element from
+        that run and matches it from then on the way it matches a recorded step, so a
+        later page change does not break the step. Your selector only has to pick out
+        the element on the page as it is now. Left false, the selector is a pin, and
+        the step fails once the selector stops matching.
+
+        Read the scenario again from the response: it has the new steps' ids and the
+        `version_token` for your next write.
+      tags:
+      - scenario
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        description: 'For example, 1 for the following URL: https://app.autify.com/projects/1/scenarios/2
+
+          '
+        schema:
+          type: integer
+      - name: scenario_id
+        in: path
+        required: true
+        description: 'For example, 2 for the following URL: https://app.autify.com/projects/1/scenarios/2
+
+          '
+        schema:
+          type: integer
+      requestBody:
+        description: The scenario's steps, in the order they should run
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              "$ref": "#/components/schemas/ReplaceScenarioStepsRequest"
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ScenarioDetail"
+        '400':
+          description: |
+            The steps could not be written, and none were. A problem with one step
+            starts the message with that step's position, as `steps[<index>]: `: an
+            `id` that is not a step of this scenario or appears twice, an entry that is
+            not a step object, a new step without an `action_type`, an argument name
+            the keyword does not have, a required argument left empty, a
+            `user_locator` without its `css:` or `xpath:` prefix, a step group of
+            another project, or a keyword that can only be recorded. A problem with the
+            request as a whole carries no position: a body that is not JSON, `steps`
+            missing or not a list, removing a step an export variable reads from,
+            writing the steps of a step group, which cannot be written through the
+            API, or `version_token` sent empty rather than omitted.
+        '402':
+          description: |
+            A step uses a keyword, or is a cleanup step, that this workspace's plan
+            does not include. `listStepKeywords` reports which keywords it includes.
+            Nothing was written.
+        '412':
+          description: |
+            The scenario changed after the version you named. Read the scenario again,
+            reapply your change and retry against the `version_token` you get back.
+            Nothing was written.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: integer
+                          default: 412
+                        message:
+                          type: string
   "/projects/{project_id}/scenarios/{scenario_id}/duplications":
     post:
       operationId: duplicateScenario
@@ -290,6 +445,170 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/ScenarioDetail"
+        '402':
+          description: |
+            The scenario has steps this workspace's plan does not include, so no
+            copy was made. `message` names every blocked step in one sentence, so a
+            single request tells you everything to remove or upgrade. Duplicating
+            counts as writing every step again, so a scenario that still has a step
+            from an earlier plan cannot be duplicated even though it can still be
+            edited.
+            `listStepKeywords` shows which keywords the plan includes. Retrying will
+            not succeed until the plan changes.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: integer
+                          default: 402
+                        message:
+                          type: string
+  "/projects/{project_id}/scenarios/{scenario_id}/histories":
+    get:
+      operationId: listScenarioHistories
+      description: |
+        List a scenario's history, newest first.
+
+        Each save of the scenario's steps in the scenario editor records the whole
+        scenario as it stood after that save, as one entry, and so does creating it
+        by import, copy or `duplicateScenario`. An editor save's entry is written a
+        moment after the save, not with it; the others are written with it.
+        Changing only the name, description or labels, which is all
+        `updateScenario` changes, records no entry.
+
+        Use this to see when a scenario's steps changed and who changed them, then
+        read an entry with `describeScenarioHistory` to see what it held. Comparing
+        two entries shows what a save changed.
+
+        `latest` is true on the entry recorded by the most recent save of the
+        steps, and holds the steps as last saved. The entry listed after it is the
+        version before that save. A passing run, or a locator update made from a
+        test result, changes an element's candidate locators without recording an
+        entry, so `describeScenario` can differ from `latest` there.
+      tags:
+      - scenario
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        description: 'For example, 1 for the following URL: https://app.autify.com/projects/1/scenarios/2
+
+          '
+        schema:
+          type: integer
+      - name: scenario_id
+        in: path
+        required: true
+        description: 'For example, 2 for the following URL: https://app.autify.com/projects/1/scenarios/2
+
+          '
+        schema:
+          type: integer
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+        description: The number of page returns.
+      - name: per_page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 30
+        description: The number of items returns. Default number is 30 and up to a
+          maximum of 100
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/ScenarioHistory"
+        '404':
+          description: The scenario is not in this project.
+  "/projects/{project_id}/scenarios/{scenario_id}/histories/{history_id}":
+    get:
+      operationId: describeScenarioHistory
+      description: |
+        Get the steps, data table and variables a scenario held at one entry of its
+        history, as listed by `listScenarioHistories`.
+
+        They come back in the same shape `describeScenario` returns, so an entry
+        can be compared field by field with the scenario as it is now or with
+        another entry. Password masking applies as it does there. Five things
+        differ, because an entry records values rather than the rows they lived in:
+
+        - An element argument's `element_id`, `user_locator_heals` and
+          `seed_locator` are always null, because an entry records none of them.
+          Its `user_locator` and `candidate_locators` are the ones the element had
+          at that save.
+        - A step's `id` is the id it had at that save, which may no longer exist
+          in the scenario. It is null on entries saved before late July 2024,
+          when entries started recording step ids.
+        - An `Execute Step Group` step's `overrides` are read against the step
+          group as it is now, so an override on a step since removed from the
+          group is not reported.
+        - An export variable set by a step inside a step group resolves its
+          `step_id` against that group as it is now. When more than one called
+          group assigns the same identifier, the step with the lowest id wins.
+        - An entry records the scenario's name at that save but not its
+          description or labels, and a later rename does not move it.
+      tags:
+      - scenario
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: project_id
+        in: path
+        required: true
+        description: 'For example, 1 for the following URL: https://app.autify.com/projects/1/scenarios/2
+
+          '
+        schema:
+          type: integer
+      - name: scenario_id
+        in: path
+        required: true
+        description: 'For example, 2 for the following URL: https://app.autify.com/projects/1/scenarios/2
+
+          '
+        schema:
+          type: integer
+      - name: history_id
+        in: path
+        required: true
+        description: 'The `id` of an entry `listScenarioHistories` returned for this
+          scenario.
+
+          '
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ScenarioHistoryDetail"
+        '404':
+          description: |
+            The scenario is not in this project, or the entry is not in this
+            scenario's history.
   "/projects/{project_id}/scenarios/{scenario_id}/results":
     get:
       operationId: listScenarioResults
@@ -1211,6 +1530,26 @@ paths:
               schema:
                 type: object
                 "$ref": "#/components/schemas/UsedCredits"
+  "/projects":
+    get:
+      operationId: listProjects
+      description: 'List the projects (workspaces) the access token''s user is a member
+        of, plus their partner''s workspaces for a partner admin, ordered by id.
+
+        '
+      tags:
+      - project
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/Project"
   "/projects/{project_id}/project_info":
     get:
       operationId: getProjectInfo
@@ -1314,6 +1653,11 @@ components:
       properties:
         id:
           type: integer
+          nullable: true
+          description: |
+            Identifier of the step. `describeScenario` always fills it. Only
+            `describeScenarioHistory` can return null, for an entry saved before
+            late July 2024, when history entries started recording step ids.
         action_type:
           type: string
           nullable: true
@@ -1387,8 +1731,9 @@ components:
           description: |
             `text` and `url` carry `value`. `file` carries `file_name`,
             `file_size` and `object_key`. `element` carries `element_id`,
-            `user_locator` and `candidate_locators`. `step_group` carries
-            `step_group_id`.
+            `user_locator`, `user_locator_heals`, `seed_locator` and
+            `candidate_locators`. `step_group` carries `step_group_id` and
+            `overrides`.
         value:
           description: |
             The value, for a `text` or `url` argument. A value typed into a
@@ -1398,15 +1743,35 @@ components:
           - type: boolean
         element_id:
           type: integer
-          description: 'Identifier of the element this step targets. Read only.
-
-            '
+          nullable: true
+          description: |
+            Identifier of the element this step targets. Read only.
+            `describeScenario` always fills it. `describeScenarioHistory` always
+            returns null, because a history entry never records element ids.
         user_locator:
           type: string
           nullable: true
           description: |
             The CSS or XPath selector pinned to this element, if one is set. The
             `css:` or `xpath:` prefix is part of the value.
+        user_locator_heals:
+          type: boolean
+          nullable: true
+          description: |
+            Whether `user_locator` is a seed rather than a pin. When true, the next
+            run finds the element by `user_locator`, Autify learns the element from
+            that run, and later runs match it automatically as if it had been
+            recorded, so a page change no longer breaks the step. When false, every
+            run uses `user_locator` and nothing else. `describeScenario` always
+            fills it; `describeScenarioHistory` returns null, because a history
+            entry does not record it.
+        seed_locator:
+          type: string
+          nullable: true
+          description: |
+            The `user_locator` Autify last learned the element from. Read only. It
+            equals `user_locator` once a run has learned the element; when the two
+            differ, the next run uses `user_locator` again and relearns from it.
         candidate_locators:
           type: array
           nullable: true
@@ -1428,9 +1793,56 @@ components:
           nullable: true
         step_group_id:
           type: integer
+          nullable: true
           description: |
             The step group this step runs. Read it with `describeScenario` using
             this id.
+        overrides:
+          type: object
+          description: |
+            The values this call site substitutes into the step group, keyed by
+            the id of the step inside the group that each one applies to. An
+            empty object means this endpoint reports no override for the group,
+            which is not the same as the group running as authored. Two
+            overrides of an `Execute Javascript` step are never reported,
+            whether or not the step is backed by a custom action: a custom
+            action selected at the call site, and changed function arguments.
+          additionalProperties:
+            type: object
+            properties:
+              arguments:
+                type: array
+                description: |
+                  Only the arguments this call site overrides, named as
+                  `listStepKeywords` names them for the overridden step's
+                  keyword. Match by `name`: an argument left as the group
+                  authored it is absent, as is one whose stored override
+                  repeats the authored value and so substitutes nothing. An
+                  argument that names an element is absent too, because a run
+                  locates the element the step group authored and ignores
+                  anything a call site stores against that argument.
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      nullable: true
+                    type:
+                      type: string
+                      enum:
+                      - text
+                      - url
+                      description: |
+                        The kind of the substituted value: `url` where the
+                        overridden argument names a page, `text` otherwise.
+                    value:
+                      oneOf:
+                      - type: string
+                      - type: boolean
+                      description: |
+                        The substituted value. Where the overridden step was
+                        recorded on a password field this is `******`, as it is
+                        when the step group itself is read.
     ResultStepArgument:
       description: |
         An argument to a step of a run. The vocabulary matches `ScenarioStepArgument`;
@@ -1510,6 +1922,65 @@ components:
               step_id:
                 type: integer
                 nullable: true
+    ScenarioHistory:
+      properties:
+        id:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+          description: |
+            When this entry was recorded. For an editor save that is a moment after
+            the save, when the entry is written.
+        author:
+          type: object
+          allOf:
+          - "$ref": "#/components/schemas/User"
+          nullable: true
+        latest:
+          type: boolean
+          description: |
+            True on the entry recorded by the most recent save of the scenario's
+            steps.
+    ScenarioHistoryDetail:
+      properties:
+        id:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+          description: |
+            When this entry was recorded. For an editor save that is a moment after
+            the save, when the entry is written.
+        author:
+          type: object
+          allOf:
+          - "$ref": "#/components/schemas/User"
+          nullable: true
+        latest:
+          type: boolean
+          description: |
+            True when this entry was recorded by the most recent save of the
+            scenario's steps.
+        name:
+          type: string
+          description: The scenario's name when this entry was recorded.
+        steps:
+          type: array
+          description: 'The scenario''s steps at this entry, in execution order.
+
+            '
+          items:
+            "$ref": "#/components/schemas/ScenarioStep"
+        data_table:
+          type: array
+          description: 'The scenario''s data table at this entry, one entry per row.
+
+            '
+          items:
+            type: object
+        variables:
+          "$ref": "#/components/schemas/ScenarioVariables"
     AccessPoint:
       properties:
         name:
@@ -2168,6 +2639,12 @@ components:
           type: integer
         credit_consumption_event_count:
           type: integer
+    Project:
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
     ProjectInfo:
       properties:
         id:
@@ -2184,6 +2661,31 @@ components:
           type: integer
         username:
           type: string
+    CreateScenarioRequest:
+      properties:
+        name:
+          type: string
+          description: |
+            Name of the scenario, unique within the project. Omit it to have a
+            default name generated.
+        description:
+          type: string
+        labels:
+          type: array
+          description: |
+            Label names to attach, matched against this project's labels in the same
+            way as `labels` on `updateScenario`. A name this project does not already
+            have is created in it, unless `on_create` is false.
+          items:
+            type: string
+        on_create:
+          type: boolean
+          default: true
+          description: |
+            Whether to create a label named in `labels` that this project does not
+            have. Set it to false to have an unrecognised name rejected instead. Only
+            `true` and `false` are accepted, as booleans or as the strings `"true"`
+            and `"false"`.
     UpdateScenarioRequest:
       properties:
         version_token:
@@ -2191,8 +2693,8 @@ components:
           description: |
             The version of the scenario you are updating, as returned by `version_token`
             when you read it. The update is rejected with 412 if anyone changed the
-            scenario's name, description or labels in between, so read it again and retry
-            against the version you get back. Running the scenario does not change it. Sending an empty value is an error; omit the field entirely to update
+            scenario's name, description, labels or steps in between, so read it again and retry
+            against the version you get back. Running the scenario or reviewing its results does not change it. Sending an empty value is an error; omit the field entirely to update
             whatever is there without checking.
         name:
           type: string
@@ -2216,12 +2718,71 @@ components:
             have. Set it to false to have an unrecognised name rejected instead,
             which is the safer setting when a name may be a typo.
 
-            Only `true` and `false` are accepted. Any other value is rejected with
-            400 rather than being read as `true`, so a typo in this flag cannot
+            Only `true` and `false` are accepted, as booleans or as the strings
+            `"true"` and `"false"`. Any other value is rejected with 400 rather than
+            being read as `true`, so a typo in this flag cannot
             silently turn label creation back on. A repeated name in `labels` is
             attached once. A name the project would have to create but that the
             label validations reject, such as one over 50 characters, is a 400
             carrying the validation message.
+    ReplaceScenarioStepsRequest:
+      required:
+      - steps
+      properties:
+        version_token:
+          type: string
+          description: |
+            The version of the scenario you are writing, as returned by `version_token`
+            when you read it. The write is rejected with 412 if anyone changed the
+            scenario's name, description, labels or steps in between. Running the
+            scenario or reviewing its results does not change it. Sending an empty value is an error; omit the
+            field entirely to write whatever is there without checking.
+        steps:
+          type: array
+          description: |
+            Every step of the scenario, in the order they should run. Each is an
+            object with the fields of a `describeScenario` step:
+
+            - `id`: an existing step's id. Leave it out to add a step.
+            - `action_type`: required for a new step, from `listStepKeywords`.
+            - `name`, `memo`: strings. `null` clears them to empty.
+            - `on_failure`: `abort`, `continue` or `ignore`. `null` resets it to `abort`.
+            - `step_execution_type`: `scenario_step` or `cleanup_step`.
+            - `arguments`: a list of `{"name": ..., <fields>}`, matched by name. A
+              `text` or `url` argument takes `value`, a string, or `true`/`false` for
+              the switches of `Assert File Download`. An `element` argument takes
+              `user_locator` and `user_locator_heals`. A `step_group` argument takes
+              `step_group_id`, the id of a step group in this project.
+
+            `user_locator` is a CSS or XPath selector with a mandatory `css:` or
+            `xpath:` prefix, and a new element needs one. Set `user_locator_heals` to
+            true to have Autify find the element by it on the next passing run, learn
+            the element from that run, and match it automatically from then on, the
+            way a recorded step is matched; the selector then only has to be
+            unambiguous now, not survive later page changes. Left false, the selector
+            is a pin used on every run. Sending `user_locator: null` clears it, so the
+            step goes back to matching the element automatically. For a keyword that
+            needs its element, that is refused with 400 while the element has learned
+            nothing to match it by, as on a step whose `candidate_locators` are still
+            empty because it has not passed a run yet.
+
+            Read only, and ignored when sent: `element_id`, `seed_locator`,
+            `candidate_locators`, `overrides` and `assign`. A new `Execute Javascript`
+            or `Open Window` step is given a generated `assign`; copy it from the
+            response if another step refers to it. A `file` argument is read only, and
+            sending a different file value is rejected. A value read back as `******`
+            from a password field is treated as unchanged while the step keeps its
+            keyword. Changing such a step's `action_type` needs the real value sent
+            for that argument, and is rejected with 400 otherwise.
+
+            Not writable here: `Choose File` and `Open Email With Title` steps, which
+            can only be recorded; the code of an `Execute Javascript` step that runs a
+            custom action; and an element added to an existing `Execute Javascript`
+            step that has none. The overrides a step group call site substitutes are
+            kept as they are, and dropped if the call site is pointed at another
+            group.
+          items:
+            type: object
 tags:
 - name: schedule
   description: '"Schedule" is called as "Test Plan" now.
