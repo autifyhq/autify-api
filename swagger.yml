@@ -509,7 +509,9 @@ paths:
         the read back unchanged changes nothing. Arguments are matched by `name`, as
         `listStepKeywords` names them, so send only the arguments you change. An
         `Execute Javascript` step's function arguments are matched by the names
-        `describeScenario` reports for them.
+        `describeScenario` reports for them. Send a name the step lacks to add a
+        function argument, and `"value": null` to remove one. To rename one, remove
+        the old name and add the new one in the same request.
 
         A new step needs an `action_type` from `listStepKeywords` and that keyword's
         required arguments. Sending a different `action_type` for an existing step
@@ -3245,6 +3247,12 @@ components:
               which replaces any data table column, variable or address group the
               argument read before. Where the step's custom action declares the
               argument an integer, the string must hold one, such as `"7"`.
+              `"value": null` removes the function argument. A name the step lacks
+              adds one, after the others, on an existing step or a new one. Its
+              code reads the argument as a parameter of that name, so the name must
+              be a JavaScript identifier, not a reserved word, not a name the step
+              uses already, and not one of the keyword's argument names in any
+              case, such as `element`.
 
             `user_locator` is a CSS or XPath selector with a mandatory `css:` or
             `xpath:` prefix, and a new element needs one. Set `user_locator_heals` to
@@ -3283,12 +3291,13 @@ components:
 
             Not writable here: `Choose File` and `Open Email With Title` steps, which
             can only be recorded; the code of an `Execute Javascript` step that runs a
-            custom action; an element added to an existing `Execute Javascript`
-            step that has none; and any change to an `Execute Javascript` step's
-            function arguments beyond the value of one the step already has. A step
-            sent without its `id`, to copy or replace one, is rejected with 400
-            while it carries function arguments. Sent without them, the new step
-            has none, and code that reads them fails at run time.
+            custom action; the function arguments a custom action defines, beyond
+            their values; and an element added to an existing `Execute Javascript`
+            step that has none. To add an element, send the step without its `id`,
+            with its function arguments, to replace it. A step sent without its
+            `id` is new, so every value it carries is literal: an argument
+            `describeScenario` reads as an email address group's identifier
+            reaches the step as that identifier, not as an address from the group.
           items:
             type: object
 tags:
