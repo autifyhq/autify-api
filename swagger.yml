@@ -23,9 +23,10 @@ paths:
     post:
       operationId: executeSchedule
       summary: Run a test plan.
-      description: |
-        "Schedule" is called as "Test Plan" now.\
-        If you want to run a test plan, use this endpoint.
+      description: '"Schedule" is the old name for "Test Plan", so `schedule_id` is
+        the test plan''s ID.
+
+        '
       tags:
       - schedule
       security:
@@ -1138,6 +1139,12 @@ paths:
         imported variable values it ran with originally, and the new result records
         this one as the result it reruns. It reruns even if someone edited a failed
         scenario since, so you can rerun the test cases to check your fix.
+
+        Prefer this over `executeScenarios` when you are fixing the failures of a
+        test plan's result. The rerun belongs to the test plan and runs with the
+        plan's capabilities and settings, so the plan's results record its passes.
+        `executeScenarios` starts a result outside the test plan, and the plan's
+        latest result stays failed.
 
         To rerun only some of the failed scenarios, use `executeScenarios` instead.
         That starts a separate result, without the original's data table rows or
