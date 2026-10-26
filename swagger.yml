@@ -1394,6 +1394,10 @@ paths:
                         message:
                           type: string
                           default: Bad credentials
+        '402':
+          description: |
+            The contract of the organization that owns the workspace is not in effect.
+            No test was started.
         '404':
           description: Not found
           content:
@@ -2033,6 +2037,7 @@ components:
           "$ref": "#/components/schemas/User"
         description:
           type: string
+          nullable: true
         project_url:
           type: string
         steps:
@@ -2463,6 +2468,7 @@ components:
         last_use:
           type: string
           format: date-time
+          nullable: true
         creator:
           type: string
         created_at:
@@ -2503,7 +2509,7 @@ components:
       type: string
       description: mobile is deprecated and will be replaced by smartphone
       enum:
-      - desktop
+      - computer
       - mobile
       - smartphone
       - tablet
@@ -2517,6 +2523,8 @@ components:
       - edge
       - edge_legacy
       - ie
+      - chromium
+      - webkit
     TimezoneEnum:
       type: string
       enum:
@@ -2541,12 +2549,15 @@ components:
           type: string
         os_version:
           type: string
+          nullable: true
         browser:
           type: string
         browser_version:
           type: string
+          nullable: true
         device:
           type: string
+          nullable: true
         timezone:
           "$ref": "#/components/schemas/TimezoneEnum"
         resolution:
@@ -2565,14 +2576,17 @@ components:
           "$ref": "#/components/schemas/OsTypeEnum"
         os_version:
           type: string
+          nullable: true
         browser:
           type: string
         browser_type:
           "$ref": "#/components/schemas/BrowserTypeEnum"
         browser_version:
           type: string
+          nullable: true
         device:
           type: string
+          nullable: true
         device_type:
           "$ref": "#/components/schemas/DeviceTypeEnum"
         unsupported:
@@ -3025,6 +3039,7 @@ components:
           type: string
         last_use:
           type: string
+          nullable: true
         created_at:
           type: string
         updated_at:
