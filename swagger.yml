@@ -940,6 +940,8 @@ paths:
         `review_needed` is the number of "Review needed" element warnings raised
         by that execution. A count that climbs over recent results means the
         scenario's element locators are drifting.
+
+        To see an entry's steps, call `describeTestCaseResult` with its `id`.
       tags:
       - result
       security:
@@ -1043,9 +1045,9 @@ paths:
     get:
       operationId: describeResult
       summary: Get a test result.
-      description: 'Get a test result.
-
-        '
+      description: |
+        To see a test case's steps, call `describeTestCaseResult` with its
+        `test_plan_capability_results[].test_case_results[].id`.
       tags:
       - result
       security:
@@ -1070,7 +1072,10 @@ paths:
       - name: get_details
         in: query
         required: false
-        description: 'The flag to get details of the test case result.
+        description: 'The flag to get details of the test case result. Each test case
+          result then carries its `steps`, which is `null` when the test case has
+          no detailed output, for example one that ended in an internal error before
+          uploading it, is still running, or is past its retention period.
 
           '
         schema:
@@ -1217,8 +1222,8 @@ paths:
         failed step, compare its screenshot with the one from the step before it.
 
         Note: a step reports its keyword as `action_type`, the same enum
-        `listStepKeywords` and `describeScenario` use, rather than as a name. The
-        localized label the UI shows appears only in `describeResult` (`get_details`).
+        `listStepKeywords` and `describeScenario` use, rather than as a name. This
+        response doesn't include the localized label the UI shows.
 
         Values typed into a password field are returned as `******`.
       tags:
@@ -2797,9 +2802,8 @@ components:
           type: string
           description: |
             Step number within the executed test case, matching the numbering shown
-            in the result UI and returned by `describeResult` (`get_details`). Steps
-            inside a step group collapse onto one first-level number and get a
-            sub-number, e.g. "1", "2", "3-1", "3-2".
+            in the result UI. Steps inside a step group collapse onto one first-level
+            number and get a sub-number, e.g. "1", "2", "3-1", "3-2".
         id:
           type: integer
           description: |
